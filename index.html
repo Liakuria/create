@@ -35,6 +35,7 @@
     .checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
     .checkbox-group label { margin-top: 0; font-weight: normal; color: #fff; cursor: pointer; }
     
+    /* 選択肢を横並び（2列）にするスタイル */
     .options-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -80,9 +81,9 @@
     }
     button:hover { background-color: #e02855; }
     
-    /* 生成コード欄を5列（5行）サイズに設定 */
+    /* 生成コードエリア（高さ調整） */
     textarea.code-output {
-      height: 130px;
+      height: 200px;
       font-family: monospace;
       white-space: pre;
     }
@@ -116,6 +117,7 @@
     <label>問題文</label>
     <input type="text" id="question" placeholder="例: 「幸せを運ぶお稲荷さま」甘噛こんこんの夢は何？">
 
+    <!-- 4択設定エリア（横並び） -->
     <div id="choice-area">
       <label>選択肢と正解ラジオボタン（ラジオボタンで正解を選択）</label>
       <div class="options-grid">
@@ -138,6 +140,7 @@
       </div>
     </div>
 
+    <!-- 記述入力設定エリア -->
     <div id="input-area" style="display: none;">
       <label>正解パターン（カンマ区切りで複数指定可）</label>
       <input type="text" id="answers" placeholder="例: 甘噛こんこん, あまがみこんこん, こんこん">
@@ -149,7 +152,7 @@
   <div class="card">
     <h2>2. 生成コード (quiz.js に貼り付け)</h2>
     <p class="help-text">以下のコードをコピーして `quiz.js` の `const quizData = [` と `];` の間に貼り付けてください。</p>
-    <textarea id="output" class="code-output" rows="5" readonly></textarea>
+    <textarea id="output" class="code-output" readonly></textarea>
     <button onclick="copyCode()" style="background-color: #2a2a3a; border: 1px solid #444466;">コードをコピーする</button>
   </div>
 
@@ -199,9 +202,28 @@
     resetForm();
   }
 
+  // 出力を1要素あたり「7行フォーマット」にする処理
   function updateOutput() {
-    const jsonString = JSON.stringify(generatedList, null, 2);
-    document.getElementById('output').value = jsonString.slice(1, -1).trim() + ",";
+    const formattedList = generatedList.map(item => {
+      if (item.type === 'choice') {
+        return `  {\n` +
+               `    "type": "${item.type}",\n` +
+               `    "levels": ${JSON.stringify(item.levels)},\n` +
+               `    "question": "${item.question}",\n` +
+               `    "options": ${JSON.stringify(item.options)},\n` +
+               `    "answer": ${item.answer}\n` +
+               `  }`;
+      } else {
+        return `  {\n` +
+               `    "type": "${item.type}",\n` +
+               `    "levels": ${JSON.stringify(item.levels)},\n` +
+               `    "question": "${item.question}",\n` +
+               `    "answers": ${JSON.stringify(item.answers)}\n` +
+               `  }`;
+      }
+    });
+
+    document.getElementById('output').value = formattedList.join(',\n') + ',';
   }
 
   function resetForm() {
