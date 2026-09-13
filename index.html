@@ -34,8 +34,38 @@
     }
     .checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
     .checkbox-group label { margin-top: 0; font-weight: normal; color: #fff; cursor: pointer; }
-    .radio-option { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-    .radio-option input[type="radio"] { accent-color: #ff3366; }
+    
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #12121a;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #333348;
+    }
+    .radio-option input[type="radio"] {
+      accent-color: #ff3366;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .radio-option input[type="text"] {
+      margin-top: 0;
+      border: none;
+      background: transparent;
+      padding: 6px 0;
+    }
+    .radio-option input[type="text"]:focus {
+      outline: none;
+    }
+
     button {
       background-color: #ff3366;
       color: #fff;
@@ -49,12 +79,18 @@
       margin-top: 15px;
     }
     button:hover { background-color: #e02855; }
+    
+    /* 生成コード欄を5列（5行）サイズに設定 */
     textarea.code-output {
-      height: 250px;
+      height: 130px;
       font-family: monospace;
       white-space: pre;
     }
     .help-text { font-size: 0.85rem; color: #8888a0; margin-top: 3px; }
+
+    @media (max-width: 600px) {
+      .options-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -80,32 +116,31 @@
     <label>問題文</label>
     <input type="text" id="question" placeholder="例: 「幸せを運ぶお稲荷さま」甘噛こんこんの夢は何？">
 
-    <!-- 4択設定エリア -->
     <div id="choice-area">
-      <label>選択肢と正解ラジオボタン</label>
-      <div class="radio-option">
-        <input type="radio" name="correct" value="0" checked>
-        <input type="text" id="opt-0" placeholder="選択肢 1（正解なら左のラジオボタンを選択）">
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="correct" value="1">
-        <input type="text" id="opt-1" placeholder="選択肢 2">
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="correct" value="2">
-        <input type="text" id="opt-2" placeholder="選択肢 3">
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="correct" value="3">
-        <input type="text" id="opt-3" placeholder="選択肢 4">
+      <label>選択肢と正解ラジオボタン（ラジオボタンで正解を選択）</label>
+      <div class="options-grid">
+        <div class="radio-option">
+          <input type="radio" name="correct" value="0" checked>
+          <input type="text" id="opt-0" placeholder="選択肢 1">
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="correct" value="1">
+          <input type="text" id="opt-1" placeholder="選択肢 2">
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="correct" value="2">
+          <input type="text" id="opt-2" placeholder="選択肢 3">
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="correct" value="3">
+          <input type="text" id="opt-3" placeholder="選択肢 4">
+        </div>
       </div>
     </div>
 
-    <!-- 記述入力設定エリア -->
     <div id="input-area" style="display: none;">
       <label>正解パターン（カンマ区切りで複数指定可）</label>
       <input type="text" id="answers" placeholder="例: 甘噛こんこん, あまがみこんこん, こんこん">
-      <div class="help-text">※ひらがな、カタカナ、略称などをカンマ( , )で区切って入力しておくと親切です。</div>
     </div>
 
     <button onclick="addQuestion()">コードを生成して下に追加 ↓</button>
@@ -114,7 +149,7 @@
   <div class="card">
     <h2>2. 生成コード (quiz.js に貼り付け)</h2>
     <p class="help-text">以下のコードをコピーして `quiz.js` の `const quizData = [` と `];` の間に貼り付けてください。</p>
-    <textarea id="output" class="code-output" readonly></textarea>
+    <textarea id="output" class="code-output" rows="5" readonly></textarea>
     <button onclick="copyCode()" style="background-color: #2a2a3a; border: 1px solid #444466;">コードをコピーする</button>
   </div>
 
@@ -131,7 +166,6 @@
     const type = document.getElementById('type').value;
     const question = document.getElementById('question').value.trim();
 
-    // 難易度取得
     const levels = [];
     if (document.getElementById('lvl-easy').checked) levels.push("easy");
     if (document.getElementById('lvl-normal').checked) levels.push("normal");
@@ -167,7 +201,6 @@
 
   function updateOutput() {
     const jsonString = JSON.stringify(generatedList, null, 2);
-    // JSONのキー囲みクォーテーションを整形して表示
     document.getElementById('output').value = jsonString.slice(1, -1).trim() + ",";
   }
 
