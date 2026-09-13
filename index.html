@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GΔ59 クイズ作成ジェネレーター</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0f0f12;
+      color: #f0f0f5;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: #ff3366; text-align: center; }
+    .card {
+      background-color: #1a1a24;
+      border: 1px solid #333348;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    label { display: block; margin-top: 15px; font-weight: bold; color: #a0a0b8; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #444466;
+      background-color: #12121a;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    .checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
+    .checkbox-group label { margin-top: 0; font-weight: normal; color: #fff; cursor: pointer; }
+    .radio-option { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+    .radio-option input[type="radio"] { accent-color: #ff3366; }
+    button {
+      background-color: #ff3366;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 15px;
+    }
+    button:hover { background-color: #e02855; }
+    textarea.code-output {
+      height: 250px;
+      font-family: monospace;
+      white-space: pre;
+    }
+    .help-text { font-size: 0.85rem; color: #8888a0; margin-top: 3px; }
+  </style>
+</head>
+<body>
+
+  <h1>GΔ59 クイズ作成ジェネレーター</h1>
+
+  <div class="card">
+    <h2>1. 問題を入力</h2>
+
+    <label>出題タイプ</label>
+    <select id="type" onchange="toggleType()">
+      <option value="choice">4択問題</option>
+      <option value="input">記述入力問題</option>
+    </select>
+
+    <label>出題される難易度（複数選択可）</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="lvl-easy" value="easy" checked> 簡単</label>
+      <label><input type="checkbox" id="lvl-normal" value="normal" checked> 普通</label>
+      <label><input type="checkbox" id="lvl-hard" value="hard"> 難しい</label>
+    </div>
+
+    <label>問題文</label>
+    <input type="text" id="question" placeholder="例: 「幸せを運ぶお稲荷さま」甘噛こんこんの夢は何？">
+
+    <!-- 4択設定エリア -->
+    <div id="choice-area">
+      <label>選択肢と正解ラジオボタン</label>
+      <div class="radio-option">
+        <input type="radio" name="correct" value="0" checked>
+        <input type="text" id="opt-0" placeholder="選択肢 1（正解なら左のラジオボタンを選択）">
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="correct" value="1">
+        <input type="text" id="opt-1" placeholder="選択肢 2">
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="correct" value="2">
+        <input type="text" id="opt-2" placeholder="選択肢 3">
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="correct" value="3">
+        <input type="text" id="opt-3" placeholder="選択肢 4">
+      </div>
+    </div>
+
+    <!-- 記述入力設定エリア -->
+    <div id="input-area" style="display: none;">
+      <label>正解パターン（カンマ区切りで複数指定可）</label>
+      <input type="text" id="answers" placeholder="例: 甘噛こんこん, あまがみこんこん, こんこん">
+      <div class="help-text">※ひらがな、カタカナ、略称などをカンマ( , )で区切って入力しておくと親切です。</div>
+    </div>
+
+    <button onclick="addQuestion()">コードを生成して下に追加 ↓</button>
+  </div>
+
+  <div class="card">
+    <h2>2. 生成コード (quiz.js に貼り付け)</h2>
+    <p class="help-text">以下のコードをコピーして `quiz.js` の `const quizData = [` と `];` の間に貼り付けてください。</p>
+    <textarea id="output" class="code-output" readonly></textarea>
+    <button onclick="copyCode()" style="background-color: #2a2a3a; border: 1px solid #444466;">コードをコピーする</button>
+  </div>
+
+<script>
+  let generatedList = [];
+
+  function toggleType() {
+    const type = document.getElementById('type').value;
+    document.getElementById('choice-area').style.display = type === 'choice' ? 'block' : 'none';
+    document.getElementById('input-area').style.display = type === 'input' ? 'block' : 'none';
+  }
+
+  function addQuestion() {
+    const type = document.getElementById('type').value;
+    const question = document.getElementById('question').value.trim();
+
+    // 難易度取得
+    const levels = [];
+    if (document.getElementById('lvl-easy').checked) levels.push("easy");
+    if (document.getElementById('lvl-normal').checked) levels.push("normal");
+    if (document.getElementById('lvl-hard').checked) levels.push("hard");
+
+    if (!question) { alert('問題文を入力してください'); return; }
+    if (levels.length === 0) { alert('難易度を最低1つ選んでください'); return; }
+
+    let item = { type, levels, question };
+
+    if (type === 'choice') {
+      const options = [
+        document.getElementById('opt-0').value.trim(),
+        document.getElementById('opt-1').value.trim(),
+        document.getElementById('opt-2').value.trim(),
+        document.getElementById('opt-3').value.trim()
+      ];
+      if (options.some(o => !o)) { alert('4つの選択肢をすべて入力してください'); return; }
+      
+      const answer = parseInt(document.querySelector('input[name="correct"]:checked').value);
+      item.options = options;
+      item.answer = answer;
+    } else {
+      const answersRaw = document.getElementById('answers').value.trim();
+      if (!answersRaw) { alert('正解の文字列を入力してください'); return; }
+      item.answers = answersRaw.split(',').map(a => a.trim()).filter(a => a);
+    }
+
+    generatedList.push(item);
+    updateOutput();
+    resetForm();
+  }
+
+  function updateOutput() {
+    const jsonString = JSON.stringify(generatedList, null, 2);
+    // JSONのキー囲みクォーテーションを整形して表示
+    document.getElementById('output').value = jsonString.slice(1, -1).trim() + ",";
+  }
+
+  function resetForm() {
+    document.getElementById('question').value = '';
+    document.getElementById('opt-0').value = '';
+    document.getElementById('opt-1').value = '';
+    document.getElementById('opt-2').value = '';
+    document.getElementById('opt-3').value = '';
+    document.getElementById('answers').value = '';
+  }
+
+  function copyCode() {
+    const copyText = document.getElementById("output");
+    copyText.select();
+    document.execCommand("copy");
+    alert("コードをコピーしました！ quiz.js に貼り付けてください。");
+  }
+</script>
+
+</body>
+</html>
